@@ -12,7 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -138,7 +137,8 @@ public class InventoryListener implements Listener {
 			if (event.getSlot() > 2) {
 				return;
 			}
-		} else if (!(event.getInventory().getHolder() instanceof Barrel) && !(P.use1_14 && event.getInventory().getHolder() instanceof org.bukkit.block.Barrel)) {
+			//These 2 checks have had their getHolders set to false as they are only used for the checks anyway.
+		} else if (!(event.getInventory().getHolder(false) instanceof Barrel) && !(P.use1_14 && event.getInventory().getHolder(false) instanceof org.bukkit.block.Barrel)) {
 			return;
 		}
 
@@ -195,11 +195,13 @@ public class InventoryListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onInventoryClickBSealer(InventoryClickEvent event) {
 		if (!P.use1_13) return;
-		InventoryHolder holder = event.getInventory().getHolder();
-		if (!(holder instanceof BSealer)) {
+		//Should be an acceptable fix for now, but will require more testing. Uses live for test, but then gets snapshot_
+		// _only if necessary. This 100% needs to be changed to some sort of map function in future though as it is_
+		// _still goofy as hell. (Raz)
+		if (!(event.getInventory().getHolder(false) instanceof BSealer)) {
 			return;
 		}
-		((BSealer) holder).clickInv();
+		((BSealer) event.getInventory().getHolder()).clickInv();
 	}
 
 	//public static boolean opening = false;
@@ -268,6 +270,9 @@ public class InventoryListener implements Listener {
 	// Convert Color Lore from MC Barrels back into normal color on taking out
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
 	public void onHopperMove(InventoryMoveItemEvent event){
+		// This one should be fine for now, as the primary check is on the item. Even so, a map in future would be_
+		// _ideal for reducing unnecessary load whilst moving items out of the "hopper" (It isnt a hopper anymore, name_
+		// _should probably change.
 		if (event.getSource() instanceof BrewerInventory) {
 			if (BDistiller.isTrackingDistiller(((BrewerInventory) event.getSource()).getHolder().getBlock())) {
 				event.setCancelled(true);
@@ -300,14 +305,16 @@ public class InventoryListener implements Listener {
 	@EventHandler
 	public void onInventoryClose(InventoryCloseEvent event) {
 		if (!P.use1_13) return;
-		if (event.getInventory().getHolder() instanceof BSealer) {
+		// The checks are now false to increase performance, but the actual actions will remain as true (default) for now_
+		// _ until further investigation can be done. (Raz)
+		if (event.getInventory().getHolder(false) instanceof BSealer) {
 			((BSealer) event.getInventory().getHolder()).closeInv();
 		}
 
 		if (!P.use1_14) return;
 
 		// Barrel Closing Sound
-		if (event.getInventory().getHolder() instanceof Barrel) {
+		if (event.getInventory().getHolder(false) instanceof Barrel) {
 			Barrel barrel = ((Barrel) event.getInventory().getHolder());
 			barrel.playClosingSound();
 		}
